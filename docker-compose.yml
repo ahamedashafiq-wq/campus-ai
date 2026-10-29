@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: campus
+      POSTGRES_PASSWORD: campus
+      POSTGRES_DB: campusmatch
+    ports:
+      - "5432:5432"
+    volumes:
+      - campus_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U campus -d campusmatch"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      APP_ENV: development
+      SECRET_KEY: local-compose-secret-change-me-32ch
+      DATABASE_URL: postgresql+psycopg://campus:campus@db:5432/campusmatch
+      FRONTEND_ORIGIN: http://localhost:3000
+      BACKEND_CORS_ORIGINS: http://localhost:3000
+      COOKIE_SECURE: "false"
+      LOCAL_STORAGE_PATH: /app/data/resumes
+      EMBEDDING_ENABLED: "true"
+      EMBEDDING_LAZY_LOAD: "true"
+    volumes:
+      - campus_resumes:/app/data/resumes
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  campus_pg:
+  campus_resumes:

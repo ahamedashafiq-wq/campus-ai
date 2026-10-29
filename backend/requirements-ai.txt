@@ -1,0 +1,3 @@
+# Optional. Core matching uses TF-IDF if these are not installed.
+sentence-transformers==3.4.1
+torch>=2.2.0

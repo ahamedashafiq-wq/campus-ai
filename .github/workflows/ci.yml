@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -r requirements.txt
+      - name: Test
+        env:
+          APP_ENV: test
+          SECRET_KEY: ci-secret-key-32-characters-long
+          DATABASE_URL: sqlite://
+          EMBEDDING_ENABLED: "false"
+        run: pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install
+        run: npm ci || npm install
+      - name: Typecheck and build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+        run: npm run build
